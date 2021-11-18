@@ -12,5 +12,5 @@ setup(
     ],
     keywords=['sci-annot', 'object', 'detection', 'evaluation'],
     python_requires='>=3.9, <4',
-    install_requires=['numpy==1.21.4', 'lapsolver==1.1.0']
+    install_requires=['numpy>=1.21', 'lapsolver>=1.1']
 )
