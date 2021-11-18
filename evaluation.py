@@ -47,7 +47,10 @@ def calc_IOU(box1: BoundingBox, box2: BoundingBox) -> float:
     # return the intersection over union value
     return iou
 
-def calc_confusion_matrix(predictions: list[BoundingBox], ground_truth: list[BoundingBox]) -> tuple[float, float, float]:
+def calc_confusion_matrix_class(
+    predictions: list[BoundingBox],
+    ground_truth: list[BoundingBox]
+) -> tuple[float, float, float]:
     true_positive = 0
     false_positive = 0
     false_negative = 0
@@ -72,9 +75,46 @@ def calc_confusion_matrix(predictions: list[BoundingBox], ground_truth: list[Bou
 
     return true_positive, false_positive, false_negative
 
+def build_index_dependencies(input: list[BoundingBox]) -> dict[int, int]:
+    result = {}
+    for i, entry in enumerate(input):
+        if entry.parent:
+            result[i] = input.index(entry.parent)
+    return result
+
+def calc_confusion_matrix_dependencies(
+    predictions: list[BoundingBox],
+    ground_truth: list[BoundingBox]
+) -> tuple[float, float, float]:
+    true_positive = 0
+    false_positive = 0
+    false_negative = 0
+    prediction_deps = build_index_dependencies(predictions)
+    truth_deps = build_index_dependencies(ground_truth)
+    costs = calc_L2_matrix(predictions, ground_truth)
+    row_ids, col_ids = lapsolver.solve_dense(costs)
+    pred_truth_map = {row:col for row, col in zip(row_ids, col_ids)}
+
+    for child, parent in prediction_deps.items():
+        if (child in pred_truth_map.keys() and parent in pred_truth_map.keys()):
+            gt_child = pred_truth_map[child]
+            gt_parent = pred_truth_map[parent]
+
+            if (gt_child in truth_deps.keys() and gt_parent == truth_deps[gt_child]):
+                true_positive += 1
+            else:
+                false_positive +=1
+        else:
+            false_positive +=1
+    
+    false_negative += max(0, len(truth_deps) - len(prediction_deps))
+
+    return true_positive, false_positive, false_negative
+
+
 
 sci_parser = SciAnnotParser()
 res1 = sci_parser.parse_text(sci_annot_json_text_1)
 res2 = sci_parser.parse_text(sci_annot_json_text_2)
 
-print(calc_confusion_matrix(res2, res1))
+print(calc_confusion_matrix_dependencies(res2, res1))
