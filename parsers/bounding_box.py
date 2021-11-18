@@ -1,5 +1,12 @@
+from enum import Enum
+
+class TargetType(Enum):
+    FIGURE = 'Figure'
+    TABLE = 'Table'
+    CAPTION = 'Caption'
+
 class BoundingBox():
-    def __init__(self, type: str,  x: float, y: float, height: float, width: float, parent: str) -> None:
+    def __init__(self, type: TargetType,  x: float, y: float, height: float, width: float, parent: str) -> None:
         self.type = type
         self.x = x
         self.y = y

@@ -1,12 +1,6 @@
 from abc import ABC, ABCMeta, abstractmethod
-from enum import Enum
 
 from . bounding_box import BoundingBox
-class TargetClass(Enum):
-    FIGURE = 'Figure',
-    TABLE = 'Table',
-    CAPTION = 'Caption'
-
 
 class Parser(ABC):
     

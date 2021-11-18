@@ -1,4 +1,4 @@
-from parsers.bounding_box import BoundingBox
+from parsers.bounding_box import BoundingBox, TargetType
 from parsers.sci_annot_parser import SciAnnotParser
 import math
 import numpy as np
@@ -49,8 +49,9 @@ def calc_IOU(box1: BoundingBox, box2: BoundingBox) -> float:
 
 def calc_confusion_matrix_class(
     predictions: list[BoundingBox],
-    ground_truth: list[BoundingBox]
-) -> tuple[float, float, float]:
+    ground_truth: list[BoundingBox],
+    IOU_threshold: float
+) -> tuple[int, int, int]:
     true_positive = 0
     false_positive = 0
     false_negative = 0
@@ -63,7 +64,7 @@ def calc_confusion_matrix_class(
         cols_to_remove = []
         for row, col in zip(row_ids, col_ids):
             IOU = calc_IOU(pred_copy[row], truth_copy[col])
-            if IOU >= IOU_THRESHOLD:
+            if IOU >= IOU_threshold:
                 true_positive += 1
                 cols_to_remove.append(col)
             else:
@@ -75,22 +76,22 @@ def calc_confusion_matrix_class(
 
     return true_positive, false_positive, false_negative
 
-def build_index_dependencies(input: list[BoundingBox]) -> dict[int, int]:
+def build_index_refs(input: list[BoundingBox]) -> dict[int, int]:
     result = {}
     for i, entry in enumerate(input):
         if entry.parent:
             result[i] = input.index(entry.parent)
     return result
 
-def calc_confusion_matrix_dependencies(
+def calc_confusion_matrix_references(
     predictions: list[BoundingBox],
     ground_truth: list[BoundingBox]
-) -> tuple[float, float, float]:
+) -> tuple[int, int, int]:
     true_positive = 0
     false_positive = 0
     false_negative = 0
-    prediction_deps = build_index_dependencies(predictions)
-    truth_deps = build_index_dependencies(ground_truth)
+    prediction_deps = build_index_refs(predictions)
+    truth_deps = build_index_refs(ground_truth)
     costs = calc_L2_matrix(predictions, ground_truth)
     row_ids, col_ids = lapsolver.solve_dense(costs)
     pred_truth_map = {row:col for row, col in zip(row_ids, col_ids)}
@@ -111,10 +112,29 @@ def calc_confusion_matrix_dependencies(
 
     return true_positive, false_positive, false_negative
 
+def evaluate(
+    predictions: list[BoundingBox],
+    ground_truth: list[BoundingBox],
+    IOU_threshold: float = IOU_THRESHOLD,
+    eval_dependencies: bool = True,
+    classes=[t.value for t in TargetType]
+) -> dict[str, tuple[int, int, int]]:
+    result = {}
+    for cls in classes:
+        pred_filtered = [pred for pred in predictions if pred.type == cls]
+        gt_filtered = [gt for gt in ground_truth if gt.type == cls]
+        tmp_res = calc_confusion_matrix_class(pred_filtered, gt_filtered, IOU_threshold)
+        result[cls] = tmp_res
+    
+    if eval_dependencies:
+        result['_references'] = calc_confusion_matrix_references(predictions, ground_truth) 
+
+    return result
+
 
 
 sci_parser = SciAnnotParser()
 res1 = sci_parser.parse_text(sci_annot_json_text_1)
 res2 = sci_parser.parse_text(sci_annot_json_text_2)
 
-print(calc_confusion_matrix_dependencies(res2, res1))
+print(evaluate(res2, res1))
