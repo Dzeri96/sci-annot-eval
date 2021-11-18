@@ -1,9 +1,10 @@
-from parsers.bounding_box import BoundingBox, TargetType
-from parsers.sci_annot_parser import SciAnnotParser
+from . parsers.bounding_box import BoundingBox, TargetType
+from . parsers.sci_annot_parser import SciAnnotParser
+from . helpers import helpers
 import math
 import numpy as np
 import lapsolver
-from helpers import helpers
+
 SCALE_FACTOR = 1000
 IOU_THRESHOLD = 0.8
 

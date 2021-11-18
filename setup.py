@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name='sci-annot-eval',
-    version='0.0.2',
+    name='sci_annot_eval',
+    version='0.0.4',
     description='The evaluation component of the sci-annot framework',
     author='Dzeri96',
     classifiers=[
@@ -12,5 +12,6 @@ setup(
     ],
     keywords=['sci-annot', 'object', 'detection', 'evaluation'],
     python_requires='>=3.9, <4',
-    install_requires=['numpy>=1.21', 'lapsolver>=1.1']
+    install_requires=['numpy>=1.21', 'lapsolver>=1.1'],
+    packages=find_packages()
 )
