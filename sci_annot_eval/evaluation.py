@@ -1,5 +1,4 @@
 from . parsers.bounding_box import BoundingBox, TargetType
-from . parsers.sci_annot_parser import SciAnnotParser
 from . helpers import helpers
 import math
 import numpy as np
@@ -94,22 +93,23 @@ def calc_confusion_matrix_references(
     prediction_deps = build_index_refs(predictions)
     truth_deps = build_index_refs(ground_truth)
     costs = calc_L2_matrix(predictions, ground_truth)
-    row_ids, col_ids = lapsolver.solve_dense(costs)
-    pred_truth_map = {row:col for row, col in zip(row_ids, col_ids)}
+    if (predictions and ground_truth):
+        row_ids, col_ids = lapsolver.solve_dense(costs)
+        pred_truth_map = {row:col for row, col in zip(row_ids, col_ids)}
+        for child, parent in prediction_deps.items():
+            if (child in pred_truth_map.keys() and parent in pred_truth_map.keys()):
+                gt_child = pred_truth_map[child]
+                gt_parent = pred_truth_map[parent]
 
-    for child, parent in prediction_deps.items():
-        if (child in pred_truth_map.keys() and parent in pred_truth_map.keys()):
-            gt_child = pred_truth_map[child]
-            gt_parent = pred_truth_map[parent]
-
-            if (gt_child in truth_deps.keys() and gt_parent == truth_deps[gt_child]):
-                true_positive += 1
+                if (gt_child in truth_deps.keys() and gt_parent == truth_deps[gt_child]):
+                    true_positive += 1
+                else:
+                    false_positive +=1
             else:
                 false_positive +=1
-        else:
-            false_positive +=1
-    
-    false_negative += max(0, len(truth_deps) - len(prediction_deps))
+        false_negative += max(0, len(truth_deps) - len(prediction_deps))
+    else:
+        false_positive = len(predictions)
 
     return true_positive, false_positive, false_negative
 
@@ -132,10 +132,13 @@ def evaluate(
 
     return result
 
-
-
-sci_parser = SciAnnotParser()
-res1 = sci_parser.parse_text(sci_annot_json_text_1)
-res2 = sci_parser.parse_text(sci_annot_json_text_2)
-
-print(evaluate(res2, res1))
+def check_no_disagreements(
+    predictions: list[BoundingBox],
+    ground_truth: list[BoundingBox],
+    IOU_threshold: float = IOU_THRESHOLD
+)-> bool:
+    confusion_matrix = evaluate(predictions, ground_truth, IOU_threshold)
+    for _, fp, fn in confusion_matrix.values():
+        if fp or fn:
+            return False
+    return True

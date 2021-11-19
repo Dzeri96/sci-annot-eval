@@ -48,10 +48,10 @@ class SciAnnotParser(Parser):
 
             result[id] = BoundingBox(
                 type,
-                x/canvas_width,
-                y/canvas_height,
-                height/canvas_height,
-                width/canvas_width,
+                x/float(canvas_width),
+                y/float(canvas_height),
+                height/float(canvas_height),
+                width/float(canvas_width),
                 parent_id
             )
 
