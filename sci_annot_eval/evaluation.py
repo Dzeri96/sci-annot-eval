@@ -1,4 +1,4 @@
-from . parsers.bounding_box import BoundingBox, TargetType
+from . common.bounding_box import BoundingBox, TargetType, AbsoluteBoundingBox, RelativeBoundingBox
 from . helpers import helpers
 import math
 import numpy as np
@@ -14,10 +14,14 @@ sci_annot_json_text_2 = '{"appVersion":"0.1.0","secondCounter":"39","annotations
 def calc_L2_matrix(predictions: list[BoundingBox], ground_truth: list[BoundingBox]) -> np.ndarray:
     result = []
     for prediction in predictions:
+        if type(prediction) is not AbsoluteBoundingBox:
+            raise TypeError(f'Annotation {prediction} is not of type AbsoluteBoundingBox!')
         pred_centre_x = (prediction.x + (prediction.width / 2)) * SCALE_FACTOR
         pred_centre_y = (prediction.y + (prediction.height / 2)) * SCALE_FACTOR
         column = []
         for truth in ground_truth:
+            if type(truth) is not AbsoluteBoundingBox:
+                raise TypeError(f'Annotation {truth} is not of type AbsoluteBoundingBox!')
             truth_centre_x = (truth.x + (truth.width / 2)) * SCALE_FACTOR
             truth_centre_y = (truth.y + (truth.height / 2)) * SCALE_FACTOR
             L2_distance = math.sqrt((pred_centre_x - truth_centre_x) ** 2 + (pred_centre_y - truth_centre_y) ** 2)
