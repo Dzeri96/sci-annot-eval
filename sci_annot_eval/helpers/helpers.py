@@ -79,7 +79,6 @@ def crop_all_to_content(
     threshold: int= 248
 ) -> list[RelativeBoundingBox]:
     img = cv.imread(img_path)
-    print(f'img_shape: {img.shape}')
     result_dict = {}
     for annot in orig_annots:
         x, y, w, h = crop_to_content(img, annot, threshold)

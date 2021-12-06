@@ -7,6 +7,9 @@ name = "pypi"
 numpy = "*"
 lapsolver = "*"
 opencv-python = "*"
+pdf2image = "*"
+pandas = "*"
+pyarrow = "*"
 
 [dev-packages]
 

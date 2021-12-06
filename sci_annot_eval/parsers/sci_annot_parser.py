@@ -25,10 +25,8 @@ class SciAnnotParser(Parser):
         parsed_loc = self.location_regex.findall(loc)
         if (len(parsed_loc) != 4):
             raise Exception(f'Location string couldn\'t be parsed: {loc}')
-        print(f'regex_results: {parsed_loc}')
         return tuple(float(entry) for entry in parsed_loc)
         
-
     def parse_dict(self, input: dict, make_absolute: bool) -> list[BoundingBox]:
         canvas_height = input['canvasHeight']
         canvas_width = input['canvasWidth']
