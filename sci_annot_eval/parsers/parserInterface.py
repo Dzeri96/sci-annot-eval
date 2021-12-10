@@ -11,3 +11,7 @@ class Parser(ABC):
     @abstractmethod
     def parse_text(self, input: str, make_absolute: bool) -> list[BoundingBox]:
         pass
+
+    @abstractmethod
+    def parse_file(self, path: str, make_absolute: bool) -> list[BoundingBox]:
+        pass

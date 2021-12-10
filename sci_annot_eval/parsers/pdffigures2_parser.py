@@ -1,5 +1,7 @@
-from parserInterface import Parser
+from . parserInterface import Parser
 from sci_annot_eval.common.bounding_box import BoundingBox, RelativeBoundingBox, TargetType
+from .. helpers import helpers
+import json
 
 class PdfFigures2Parser(Parser):
     def extract_x12y12(boundaries: dict) -> tuple[float, float, float, float]:
@@ -34,10 +36,17 @@ class PdfFigures2Parser(Parser):
         for r_caption in regionless_captions:
             r_cap_x, r_cap_y, r_cap_w, r_cap_h = self.extract_x12y12(r_caption['boundary'])
             result.append(RelativeBoundingBox(
-                    TargetType.CAPTION, r_cap_x, r_cap_y, r_cap_h, r_cap_w, None
-                ))
+                TargetType.CAPTION, r_cap_x, r_cap_y, r_cap_h, r_cap_w, None
+            ))
 
+        if make_absolute:
+            result = helpers.make_absolute(result, input['width'], input['height'])
+        
         return result
 
     def parse_text(self, input: str, make_absolute: bool) -> list[BoundingBox]:
-        return super().parse_text(input, make_absolute)
+        return self.parse_dict(json.loads(input), make_absolute)
+
+    def parse_file(self, path: str, make_absolute: bool) -> list[BoundingBox]:
+        with open(path, 'r') as fd:
+            return self.parse_dict(json.load(fd), make_absolute)

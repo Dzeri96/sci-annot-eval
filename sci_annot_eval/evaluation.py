@@ -124,6 +124,11 @@ def evaluate(
     eval_dependencies: bool = True,
     classes=[t.value for t in TargetType]
 ) -> dict[str, tuple[int, int, int]]:
+    """
+        Returns dictionary with keys corresponding to classes (Figure, Table, etc., and possibly _references),
+            where the values are tuples that have TP, FP, and FN values for a confusion matrix.
+    """
+
     result = {}
     for cls in classes:
         pred_filtered = [pred for pred in predictions if pred.type == cls]

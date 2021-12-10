@@ -1,7 +1,7 @@
 from . parserInterface import Parser
 from .. common.bounding_box import BoundingBox, RelativeBoundingBox
 from ..common.sci_annot_annotation import Annotation
-from .. helpers.helpers import make_absolute
+from .. helpers import helpers
 import re
 import json
 
@@ -56,9 +56,13 @@ class SciAnnotParser(Parser):
         res_list = list(result.values())
 
         if make_absolute:
-            res_list = make_absolute(res_list, canvas_width, canvas_height)
+            res_list = helpers.make_absolute(res_list, canvas_width, canvas_height)
 
         return res_list
 
     def parse_text(self, input: str, make_absolute: bool) -> list[BoundingBox]:
         return self.parse_dict(json.loads(input), make_absolute)
+
+    def parse_file(self, path: str, make_absolute: bool) -> list[BoundingBox]:
+        with open(path, 'r') as fd:
+            return self.parse_dict(json.load(fd), make_absolute)
