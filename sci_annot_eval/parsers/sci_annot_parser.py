@@ -4,6 +4,7 @@ from ..common.sci_annot_annotation import Annotation
 from .. helpers import helpers
 import re
 import json
+from typing import cast
 
 class SciAnnotParser(Parser):
     location_regex= re.compile(r'\d+(?:\.\d+)?')
@@ -15,7 +16,7 @@ class SciAnnotParser(Parser):
                 return block['value']
         raise Exception(f'Annotation has no type: {annot}')
 
-    def get_annotation_parent_id(self, annot: Annotation)-> str :
+    def get_annotation_parent_id(self, annot: Annotation) :
         for block in annot['body']:
             if block['purpose'] == 'parent':
                 return block['value']
@@ -25,13 +26,15 @@ class SciAnnotParser(Parser):
         parsed_loc = self.location_regex.findall(loc)
         if (len(parsed_loc) != 4):
             raise Exception(f'Location string couldn\'t be parsed: {loc}')
-        return tuple(float(entry) for entry in parsed_loc)
+
+        # Python's typing is not so clever yet...
+        return (float(parsed_loc[0]), float(parsed_loc[1]), float(parsed_loc[2]), float(parsed_loc[3]))
         
     def parse_dict(self, input: dict, make_absolute: bool) -> list[BoundingBox]:
-        canvas_height = input['canvasHeight']
-        canvas_width = input['canvasWidth']
+        canvas_height = int(input['canvasHeight'])
+        canvas_width = int(input['canvasWidth'])
 
-        result: dict[RelativeBoundingBox] = {}
+        result: dict[RelativeBoundingBox, RelativeBoundingBox] = {}
         for annotation in input['annotations']:
             id = annotation['id']
             ann_type = self.get_annotation_type(annotation)
@@ -58,7 +61,7 @@ class SciAnnotParser(Parser):
         if make_absolute:
             res_list = helpers.make_absolute(res_list, canvas_width, canvas_height)
 
-        return res_list
+        return cast(list[BoundingBox], res_list)
 
     def parse_text(self, input: str, make_absolute: bool) -> list[BoundingBox]:
         return self.parse_dict(json.loads(input), make_absolute)

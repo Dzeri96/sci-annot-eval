@@ -8,8 +8,8 @@ from . parsers import sci_annot_parser, pdffigures2_parser, parserInterface
 
 # TODO: Type hint values
 class RegisteredParsers(Enum):
-    SCI_ANNOT: parserInterface = sci_annot_parser.SciAnnotParser()
-    PDF_FIGURES_2: parserInterface = pdffigures2_parser.PdfFigures2Parser()
+    SCI_ANNOT = sci_annot_parser.SciAnnotParser()
+    PDF_FIGURES_2 = pdffigures2_parser.PdfFigures2Parser()
 
 def run_benchmark(
     render_summary_parquet_path: str,
@@ -23,7 +23,6 @@ def run_benchmark(
 ):  
     gtruth_parser = RegisteredParsers.__getitem__(gtruth_parser_name)
     pred_parser = RegisteredParsers.__getitem__(pred_parser_name)
-    pred_parser.value
 
     benchmark(
         render_summary_parquet_path,

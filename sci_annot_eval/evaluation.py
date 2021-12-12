@@ -1,3 +1,4 @@
+from typing import cast
 from . common.bounding_box import BoundingBox, TargetType, AbsoluteBoundingBox, RelativeBoundingBox
 from . helpers import helpers
 import math
@@ -11,7 +12,7 @@ sci_annot_json_text_1 = '{"appVersion":"0.1.0","secondCounter":"39","annotations
 
 sci_annot_json_text_2 = '{"appVersion":"0.1.0","secondCounter":"39","annotations":[{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Figure"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2494.94873046875,780.9441528320312,290.699951171875,45.89996337890625"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#95dc6c69-32ba-46dd-844d-20b01ee2d23a"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Table"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2309.267822265625,698.0511474609375,148.188720703125,25.01885986328125"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#7c3b7892-35a1-4bae-84b4-f50e2a53f04a"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Caption"},{"type":"TextualBody","purpose":"parent","value":"#95dc6c69-32ba-46dd-844d-20b01ee2d23a"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2314.884033203125,1102.15966796875,315.671142578125,240.1424560546875"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#c074e9a0-72c3-49fd-965d-40d7672500fd"}],"feedback":"Evo proradio je", "canvasHeight": 1858, "canvasWidth": 3400}'
 
-def calc_L2_matrix(predictions: list[BoundingBox], ground_truth: list[BoundingBox]) -> np.ndarray:
+def calc_L2_matrix(predictions: list[AbsoluteBoundingBox], ground_truth: list[AbsoluteBoundingBox]) -> np.ndarray:
     result = []
     for prediction in predictions:
         if type(prediction) is not AbsoluteBoundingBox:
@@ -52,8 +53,8 @@ def calc_IOU(box1: BoundingBox, box2: BoundingBox) -> float:
     return iou
 
 def calc_confusion_matrix_class(
-    predictions: list[BoundingBox],
-    ground_truth: list[BoundingBox],
+    predictions: list[AbsoluteBoundingBox],
+    ground_truth: list[AbsoluteBoundingBox],
     IOU_threshold: float
 ) -> tuple[int, int, int]:
     true_positive = 0
@@ -88,14 +89,14 @@ def build_index_refs(input: list[BoundingBox]) -> dict[int, int]:
     return result
 
 def calc_confusion_matrix_references(
-    predictions: list[BoundingBox],
-    ground_truth: list[BoundingBox]
+    predictions: list[AbsoluteBoundingBox],
+    ground_truth: list[AbsoluteBoundingBox]
 ) -> tuple[int, int, int]:
     true_positive = 0
     false_positive = 0
     false_negative = 0
-    prediction_deps = build_index_refs(predictions)
-    truth_deps = build_index_refs(ground_truth)
+    prediction_deps = build_index_refs(cast(list[BoundingBox], predictions))
+    truth_deps = build_index_refs(cast(list[BoundingBox], ground_truth))
     costs = calc_L2_matrix(predictions, ground_truth)
     if (predictions and ground_truth):
         row_ids, col_ids = lapsolver.solve_dense(costs)
@@ -118,8 +119,8 @@ def calc_confusion_matrix_references(
     return true_positive, false_positive, false_negative
 
 def evaluate(
-    predictions: list[BoundingBox],
-    ground_truth: list[BoundingBox],
+    predictions: list[AbsoluteBoundingBox],
+    ground_truth: list[AbsoluteBoundingBox],
     IOU_threshold: float = IOU_THRESHOLD,
     eval_dependencies: bool = True,
     classes=[t.value for t in TargetType]
@@ -142,8 +143,8 @@ def evaluate(
     return result
 
 def check_no_disagreements(
-    predictions: list[BoundingBox],
-    ground_truth: list[BoundingBox],
+    predictions: list[AbsoluteBoundingBox],
+    ground_truth: list[AbsoluteBoundingBox],
     IOU_threshold: float = IOU_THRESHOLD
 )-> bool:
     confusion_matrix = evaluate(predictions, ground_truth, IOU_threshold)

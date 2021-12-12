@@ -1,8 +1,10 @@
 import pandas as pd
 import os
+
+from sci_annot_eval.common.bounding_box import AbsoluteBoundingBox
 from . parsers.parserInterface import Parser
-from . evaluation import evaluate
 from sci_annot_eval import evaluation
+from typing import cast
 
 def build_id_file_dict(path: str):
     result = {}
@@ -38,30 +40,31 @@ def benchmark(
 
     render_summ = pd.read_parquet(render_summary_parquet_path)
     for row in render_summ.itertuples():
-        id = row['Index']
+        id = row.Index
         ground_truth = []
         if id in gtruth_file_dict.keys():
-            ground_truth = gtruth_parser.parse_file(gtruth_file_dict[id])
+            ground_truth = cast(list[AbsoluteBoundingBox], gtruth_parser.parse_file(gtruth_file_dict[id], True))
         predictions = []
         if id in pred_file_dict.keys():
-            predictions = pred_parser.parse_file(pred_file_dict[id])
+            predictions = cast(list[AbsoluteBoundingBox], pred_parser.parse_file(pred_file_dict[id], True))
 
         result_dict[id] = evaluation.evaluate(predictions, ground_truth, IOU_threshold)
 
     """
         Produces a DF in this shape:
-        class    class2           class_1         
-        metric metric_1 metric_2 metric_1 metric_2
+        class    class2          ... class_1                    ... 
+        metric metric_1 metric_2 ... metric_1 metric_2 metric_3 ...
         id                                        
-        id_1         -1       -2        1        2
-        id_2         -3       -4        3        4
+        id_1         -1       -2           1        2       2
+        id_2         -3       -4           3        4       0
     """
-    result_df = pd.DataFrame\
-    .from_dict(build_3D_dict(result_dict), orient='index')\
-    .unstack()\
-    .swaplevel(axis='columns')\
-    .sort_index(axis=1, level=0)\
-    .rename_axis(index='id', columns=['class', 'metric'])
+    result_df = pd.DataFrame.from_dict(result_dict, orient='index').stack()
+    result_df = pd.DataFrame(result_df.values.tolist(), index=result_df.index, columns=['TP', 'FP', 'FN'])\
+        .unstack()\
+        .swaplevel(axis=1)\
+        .sort_index(axis=1, level=0)\
+        .rename_axis(index='id', columns=['class', 'metric'])
+
 
     result_df.to_parquet(output_parquet_path)
         
