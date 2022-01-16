@@ -54,7 +54,7 @@ def make_relative(bbox_list: list[AbsoluteBoundingBox], canvas_width: int, canva
         
 def crop_to_content(
     img: np.ndarray,
-    orig_coords: RelativeBoundingBox,
+    orig_coords: AbsoluteBoundingBox,
     threshold: int= 248
 ) -> tuple[float, float, float, float]:
     ox = int(orig_coords.x)
@@ -75,14 +75,14 @@ def crop_to_content(
 
 def crop_all_to_content(
     img_path: str,
-    orig_annots: list[RelativeBoundingBox],
+    orig_annots: list[AbsoluteBoundingBox],
     threshold: int= 248
-) -> list[RelativeBoundingBox]:
+) -> list[AbsoluteBoundingBox]:
     img = cv.imread(img_path)
     result_dict = {}
     for annot in orig_annots:
         x, y, w, h = crop_to_content(img, annot, threshold)
-        cropped = RelativeBoundingBox(
+        cropped = AbsoluteBoundingBox(
             annot.type,
             x,
             y,

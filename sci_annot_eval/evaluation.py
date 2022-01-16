@@ -12,17 +12,17 @@ sci_annot_json_text_1 = '{"appVersion":"0.1.0","secondCounter":"39","annotations
 
 sci_annot_json_text_2 = '{"appVersion":"0.1.0","secondCounter":"39","annotations":[{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Figure"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2494.94873046875,780.9441528320312,290.699951171875,45.89996337890625"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#95dc6c69-32ba-46dd-844d-20b01ee2d23a"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Table"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2309.267822265625,698.0511474609375,148.188720703125,25.01885986328125"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#7c3b7892-35a1-4bae-84b4-f50e2a53f04a"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Caption"},{"type":"TextualBody","purpose":"parent","value":"#95dc6c69-32ba-46dd-844d-20b01ee2d23a"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2314.884033203125,1102.15966796875,315.671142578125,240.1424560546875"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#c074e9a0-72c3-49fd-965d-40d7672500fd"}],"feedback":"Evo proradio je", "canvasHeight": 1858, "canvasWidth": 3400}'
 
-def calc_L2_matrix(predictions: list[AbsoluteBoundingBox], ground_truth: list[AbsoluteBoundingBox]) -> np.ndarray:
+def calc_L2_matrix(predictions: list[RelativeBoundingBox], ground_truth: list[RelativeBoundingBox]) -> np.ndarray:
     result = []
     for prediction in predictions:
-        if type(prediction) is not AbsoluteBoundingBox:
-            raise TypeError(f'Annotation {prediction} is not of type AbsoluteBoundingBox!')
+        if type(prediction) is not RelativeBoundingBox:
+            raise TypeError(f'Annotation {prediction} is not of type RelativeBoundingBox!')
         pred_centre_x = (prediction.x + (prediction.width / 2)) * SCALE_FACTOR
         pred_centre_y = (prediction.y + (prediction.height / 2)) * SCALE_FACTOR
         column = []
         for truth in ground_truth:
-            if type(truth) is not AbsoluteBoundingBox:
-                raise TypeError(f'Annotation {truth} is not of type AbsoluteBoundingBox!')
+            if type(truth) is not RelativeBoundingBox:
+                raise TypeError(f'Annotation {truth} is not of type RelativeBoundingBox!')
             truth_centre_x = (truth.x + (truth.width / 2)) * SCALE_FACTOR
             truth_centre_y = (truth.y + (truth.height / 2)) * SCALE_FACTOR
             L2_distance = math.sqrt((pred_centre_x - truth_centre_x) ** 2 + (pred_centre_y - truth_centre_y) ** 2)
@@ -32,7 +32,9 @@ def calc_L2_matrix(predictions: list[AbsoluteBoundingBox], ground_truth: list[Ab
 
 def calc_IOU(box1: BoundingBox, box2: BoundingBox) -> float:
     boxA = [box1.x, box1.y, box1.x + box1.width, box1.y + box1.height]
+    boxA = [entry * SCALE_FACTOR for entry in boxA]
     boxB = [box2.x, box2.y, box2.x + box2.width, box2.y + box2.height]
+    boxB = [entry * SCALE_FACTOR for entry in boxB]
     # Taken from https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
     # determine the (x, y)-coordinates of the intersection rectangle
     xA = max(boxA[0], boxB[0])
@@ -53,8 +55,8 @@ def calc_IOU(box1: BoundingBox, box2: BoundingBox) -> float:
     return iou
 
 def calc_confusion_matrix_class(
-    predictions: list[AbsoluteBoundingBox],
-    ground_truth: list[AbsoluteBoundingBox],
+    predictions: list[RelativeBoundingBox],
+    ground_truth: list[RelativeBoundingBox],
     IOU_threshold: float
 ) -> tuple[int, int, int]:
     true_positive = 0
@@ -89,8 +91,8 @@ def build_index_refs(input: list[BoundingBox]) -> dict[int, int]:
     return result
 
 def calc_confusion_matrix_references(
-    predictions: list[AbsoluteBoundingBox],
-    ground_truth: list[AbsoluteBoundingBox]
+    predictions: list[RelativeBoundingBox],
+    ground_truth: list[RelativeBoundingBox]
 ) -> tuple[int, int, int]:
     true_positive = 0
     false_positive = 0
@@ -119,8 +121,8 @@ def calc_confusion_matrix_references(
     return true_positive, false_positive, false_negative
 
 def evaluate(
-    predictions: list[AbsoluteBoundingBox],
-    ground_truth: list[AbsoluteBoundingBox],
+    predictions: list[RelativeBoundingBox],
+    ground_truth: list[RelativeBoundingBox],
     IOU_threshold: float = IOU_THRESHOLD,
     eval_dependencies: bool = True,
     classes=[t.value for t in TargetType]
@@ -129,7 +131,6 @@ def evaluate(
         Returns dictionary with keys corresponding to classes (Figure, Table, etc., and possibly _references),
             where the values are tuples that have TP, FP, and FN values for a confusion matrix.
     """
-
     result = {}
     for cls in classes:
         pred_filtered = [pred for pred in predictions if pred.type == cls]
@@ -143,8 +144,8 @@ def evaluate(
     return result
 
 def check_no_disagreements(
-    predictions: list[AbsoluteBoundingBox],
-    ground_truth: list[AbsoluteBoundingBox],
+    predictions: list[RelativeBoundingBox],
+    ground_truth: list[RelativeBoundingBox],
     IOU_threshold: float = IOU_THRESHOLD
 )-> bool:
     confusion_matrix = evaluate(predictions, ground_truth, IOU_threshold)

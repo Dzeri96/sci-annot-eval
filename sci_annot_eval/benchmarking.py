@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-from sci_annot_eval.common.bounding_box import AbsoluteBoundingBox
+from sci_annot_eval.common.bounding_box import AbsoluteBoundingBox, RelativeBoundingBox
 from . parsers.parserInterface import Parser
 from sci_annot_eval import evaluation
 from typing import cast
@@ -43,10 +43,10 @@ def benchmark(
         id = row.Index
         ground_truth = []
         if id in gtruth_file_dict.keys():
-            ground_truth = cast(list[AbsoluteBoundingBox], gtruth_parser.parse_file(gtruth_file_dict[id], True))
+            ground_truth = cast(list[RelativeBoundingBox], gtruth_parser.parse_file(gtruth_file_dict[id], True))
         predictions = []
         if id in pred_file_dict.keys():
-            predictions = cast(list[AbsoluteBoundingBox], pred_parser.parse_file(pred_file_dict[id], True))
+            predictions = cast(list[RelativeBoundingBox], pred_parser.parse_file(pred_file_dict[id], True))
 
         result_dict[id] = evaluation.evaluate(predictions, ground_truth, IOU_threshold)
 

@@ -1,5 +1,5 @@
 from . parserInterface import Parser
-from sci_annot_eval.common.bounding_box import BoundingBox, RelativeBoundingBox, TargetType
+from sci_annot_eval.common.bounding_box import AbsoluteBoundingBox, BoundingBox, RelativeBoundingBox, TargetType
 from .. helpers import helpers
 import json
 from typing import cast
@@ -16,19 +16,19 @@ class PdfFigures2Parser(Parser):
         return x, y, w, h
 
 
-    def parse_dict(self, input: dict, make_absolute: bool) -> list[BoundingBox]:
-        result: list[RelativeBoundingBox] = []
+    def parse_dict(self, input: dict, make_relative: bool) -> list[BoundingBox]:
+        result: list[AbsoluteBoundingBox] = []
 
         figures = input['figures']
         for figure in figures:
             fig_x, fig_y, fig_w, fig_h = self.extract_x12y12(figure['regionBoundary'])
             fig_type = figure['figType']
-            fig_bbox = RelativeBoundingBox(fig_type, fig_x, fig_y, fig_h, fig_w, None)
+            fig_bbox = AbsoluteBoundingBox(fig_type, fig_x, fig_y, fig_h, fig_w, None)
             result.append(fig_bbox)
 
             if('captionBoundary' in figure.keys()):
                 cap_x, cap_y, cap_w, cap_h = self.extract_x12y12(figure['captionBoundary'])
-                result.append(RelativeBoundingBox(
+                result.append(AbsoluteBoundingBox(
                     TargetType.CAPTION.value, cap_x, cap_y, cap_h, cap_w, fig_bbox
                 ))
 
@@ -36,18 +36,18 @@ class PdfFigures2Parser(Parser):
 
         for r_caption in regionless_captions:
             r_cap_x, r_cap_y, r_cap_w, r_cap_h = self.extract_x12y12(r_caption['boundary'])
-            result.append(RelativeBoundingBox(
+            result.append(AbsoluteBoundingBox(
                 TargetType.CAPTION.value, r_cap_x, r_cap_y, r_cap_h, r_cap_w, None
             ))
 
-        if make_absolute:
-            return cast(list[BoundingBox],helpers.make_absolute(result, int(input['width']), int(input['height'])))
+        if make_relative:
+            return cast(list[BoundingBox], helpers.make_relative(result, int(input['width']), int(input['height'])))
         
         return cast(list[BoundingBox], result)
 
-    def parse_text(self, input: str, make_absolute: bool) -> list[BoundingBox]:
-        return self.parse_dict(json.loads(input), make_absolute)
+    def parse_text(self, input: str, make_relative: bool) -> list[BoundingBox]:
+        return self.parse_dict(json.loads(input), make_relative)
 
-    def parse_file(self, path: str, make_absolute: bool) -> list[BoundingBox]:
+    def parse_file(self, path: str, make_relative: bool) -> list[BoundingBox]:
         with open(path, 'r') as fd:
-            return self.parse_dict(json.load(fd), make_absolute)
+            return self.parse_dict(json.load(fd), make_relative)

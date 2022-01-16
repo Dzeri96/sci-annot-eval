@@ -1,5 +1,5 @@
 from . parserInterface import Parser
-from .. common.bounding_box import BoundingBox, RelativeBoundingBox
+from .. common.bounding_box import AbsoluteBoundingBox, BoundingBox, RelativeBoundingBox
 from ..common.sci_annot_annotation import Annotation
 from .. helpers import helpers
 import re
@@ -30,11 +30,11 @@ class SciAnnotParser(Parser):
         # Python's typing is not so clever yet...
         return (float(parsed_loc[0]), float(parsed_loc[1]), float(parsed_loc[2]), float(parsed_loc[3]))
         
-    def parse_dict(self, input: dict, make_absolute: bool) -> list[BoundingBox]:
+    def parse_dict(self, input: dict, make_relative: bool) -> list[BoundingBox]:
         canvas_height = int(input['canvasHeight'])
         canvas_width = int(input['canvasWidth'])
 
-        result: dict[RelativeBoundingBox, RelativeBoundingBox] = {}
+        result: dict[AbsoluteBoundingBox, AbsoluteBoundingBox] = {}
         for annotation in input['annotations']:
             id = annotation['id']
             ann_type = self.get_annotation_type(annotation)
@@ -43,7 +43,7 @@ class SciAnnotParser(Parser):
             if ann_type in self.child_types:
                 parent_id = self.get_annotation_parent_id(annotation)
 
-            result[id] = RelativeBoundingBox(
+            result[id] = AbsoluteBoundingBox(
                 ann_type,
                 x,
                 y,
@@ -58,14 +58,14 @@ class SciAnnotParser(Parser):
 
         res_list = list(result.values())
 
-        if make_absolute:
-            res_list = helpers.make_absolute(res_list, canvas_width, canvas_height)
+        if make_relative:
+            res_list = helpers.make_relative(res_list, canvas_width, canvas_height)
 
         return cast(list[BoundingBox], res_list)
 
-    def parse_text(self, input: str, make_absolute: bool) -> list[BoundingBox]:
-        return self.parse_dict(json.loads(input), make_absolute)
+    def parse_text(self, input: str, make_relative: bool) -> list[BoundingBox]:
+        return self.parse_dict(json.loads(input), make_relative)
 
-    def parse_file(self, path: str, make_absolute: bool) -> list[BoundingBox]:
+    def parse_file(self, path: str, make_relative: bool) -> list[BoundingBox]:
         with open(path, 'r') as fd:
-            return self.parse_dict(json.load(fd), make_absolute)
+            return self.parse_dict(json.load(fd), make_relative)

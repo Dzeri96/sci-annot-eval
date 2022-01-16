@@ -1,11 +1,11 @@
 from sci_annot_eval.common.sci_annot_annotation import Annotation
-from ..common.bounding_box import RelativeBoundingBox
+from ..common.bounding_box import AbsoluteBoundingBox
 from . exporterInterface import Exporter
 import json
 
 class SciAnnotExporter(Exporter):
     # TODO: Stop breaking the rules of OOP!
-    def export_to_dict(self, input: list[RelativeBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> dict:
+    def export_to_dict(self, input: list[AbsoluteBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> dict:
         result = {
             'canvasHeight': canvas_height,
             'canvasWidth': canvas_width,
@@ -15,8 +15,8 @@ class SciAnnotExporter(Exporter):
         source = kwargs['source'] if 'source' in kwargs.keys() else 'Unknown'
 
         for annotation in input:
-            if type(annotation) is not RelativeBoundingBox:
-                raise TypeError(f'Annotation {annotation} is not of type RelativeBoundingBox!')
+            if type(annotation) is not AbsoluteBoundingBox:
+                raise TypeError(f'Annotation {annotation} is not of type AbsoluteBoundingBox!')
             generated_anno = {
                 "type": "Annotation",
                 "body": [
@@ -49,6 +49,6 @@ class SciAnnotExporter(Exporter):
 
         return result
 
-    def export_to_str(self, input: list[RelativeBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> str:
+    def export_to_str(self, input: list[AbsoluteBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> str:
         res = self.export_to_dict(input, canvas_width, canvas_height, kwargs)
         return json.dumps(res)
