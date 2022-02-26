@@ -8,11 +8,16 @@ import lapsolver
 SCALE_FACTOR = 1000
 IOU_THRESHOLD = 0.8
 
-sci_annot_json_text_1 = '{"appVersion":"0.1.0","secondCounter":"39","annotations":[{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Figure"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2496.68310546875,780.6927490234375,281.119873046875,66.40625"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#ee9eabcc-06e2-4ff2-bdc7-202ac7da935a"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Caption"},{"type":"TextualBody","purpose":"parent","value":"#ee9eabcc-06e2-4ff2-bdc7-202ac7da935a"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2308.963623046875,1087.2264404296875,329.66455078125,222.746337890625"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#118d15d1-33aa-4e01-a59f-4f77fe633e9e"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Table"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2306.736083984375,690.7379150390625,151.467529296875,35.63946533203125"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#73a7df7c-031c-442b-8e2f-75691ceb09e8"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Caption"},{"type":"TextualBody","purpose":"parent","value":"#73a7df7c-031c-442b-8e2f-75691ceb09e8"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2146.35888671875,982.53564453125,155.92236328125,69.0513916015625"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#84192d0f-a4f8-47a6-b1ff-395794b34905"}],"feedback":"Evo proradio je", "canvasHeight": 1858, "canvasWidth": 3400}'
-
-sci_annot_json_text_2 = '{"appVersion":"0.1.0","secondCounter":"39","annotations":[{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Figure"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2494.94873046875,780.9441528320312,290.699951171875,45.89996337890625"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#95dc6c69-32ba-46dd-844d-20b01ee2d23a"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Table"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2309.267822265625,698.0511474609375,148.188720703125,25.01885986328125"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#7c3b7892-35a1-4bae-84b4-f50e2a53f04a"},{"type":"Annotation","body":[{"type":"TextualBody","purpose":"img-cap-enum","value":"Caption"},{"type":"TextualBody","purpose":"parent","value":"#95dc6c69-32ba-46dd-844d-20b01ee2d23a"}],"target":{"source":"https://upload.wikimedia.org/wikipedia/commons/d/dc/Skyscrapers_of_Shinjuku_2009_January_(revised).jpg","selector":{"type":"FragmentSelector","conformsTo":"http://www.w3.org/TR/media-frags/","value":"xywh=pixel:2314.884033203125,1102.15966796875,315.671142578125,240.1424560546875"}},"@context":"http://www.w3.org/ns/anno.jsonld","id":"#c074e9a0-72c3-49fd-965d-40d7672500fd"}],"feedback":"Evo proradio je", "canvasHeight": 1858, "canvasWidth": 3400}'
-
 def calc_L2_matrix(predictions: list[RelativeBoundingBox], ground_truth: list[RelativeBoundingBox]) -> np.ndarray:
+    """
+    Given a a list of predictions and ground truth annotations, produces a matrix in this form:
+        [
+            [gt0_pd0, gt0_pd1, gt0_pd2, ...],\n
+            [gt1_pd0, gt1_pd1, gt1_pd2, ...],\n
+            [gt2_pd0, gt2_pd1, gt2_pd2, ...]
+        ]
+    where gtX_pdY represents the distance between the center of ground truth bounding box X and prediction box Y.
+    """
     result = []
     for prediction in predictions:
         if type(prediction) is not RelativeBoundingBox:
@@ -59,6 +64,11 @@ def calc_confusion_matrix_class(
     ground_truth: list[RelativeBoundingBox],
     IOU_threshold: float
 ) -> tuple[int, int, int]:
+    """
+    Runs the hungarian algorithm on two sets of bounding boxes and compares the IOU of matches.
+
+    returns: (true positive, false_positive, false_negative) tuple.
+    """
     true_positive = 0
     false_positive = 0
     false_negative = 0
@@ -84,11 +94,15 @@ def calc_confusion_matrix_class(
     return true_positive, false_positive, false_negative
 
 def build_index_refs(input: list[BoundingBox]) -> dict[int, int]:
-    result = {}
+    """
+    Builds a dictionary where the keys correspond to the indexes of the input array (representing children), and the values refer to the indexes of the input array referring to their parents.
+    Simply put: {idx_child -> idx_parent}.
+    """
+    index_to_parent_map = {}
     for i, entry in enumerate(input):
         if entry.parent:
-            result[i] = input.index(entry.parent)
-    return result
+            index_to_parent_map[i] = input.index(entry.parent)
+    return index_to_parent_map
 
 def calc_confusion_matrix_references(
     predictions: list[RelativeBoundingBox],
@@ -104,6 +118,7 @@ def calc_confusion_matrix_references(
         row_ids, col_ids = lapsolver.solve_dense(costs)
         pred_truth_map = {row:col for row, col in zip(row_ids, col_ids)}
         for child, parent in prediction_deps.items():
+            # Check if both parent and child have an entry in the assignment table
             if (child in pred_truth_map.keys() and parent in pred_truth_map.keys()):
                 gt_child = pred_truth_map[child]
                 gt_parent = pred_truth_map[parent]
@@ -116,7 +131,8 @@ def calc_confusion_matrix_references(
                 false_positive +=1
         false_negative += max(0, len(truth_deps) - len(prediction_deps))
     else:
-        false_positive = len(predictions)
+        # TODO: Check if this should be predictions or prediction_deps
+        false_positive = len(prediction_deps)
 
     return true_positive, false_positive, false_negative
 

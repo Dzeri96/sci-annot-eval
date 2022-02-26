@@ -70,15 +70,25 @@ def crop_to_content(
     gray = 255 * (gray < threshold).astype(np.uint8)
     coords = cv.findNonZero(gray)  # Find all non-zero points (text)
     x, y, w, h = cv.boundingRect(coords)  # Find minimum spanning bounding box
-    #return (orig_coords.x+x, orig_coords.y + y, w, h)
     return (ox+x, oy+y, w, h)
 
 def crop_all_to_content(
-    img_path: str,
+    image: bytes,
     orig_annots: list[AbsoluteBoundingBox],
     threshold: int= 248
 ) -> list[AbsoluteBoundingBox]:
-    img = cv.imread(img_path)
+    """Takes a page as a bytes object and crops the whitespace out of the provided annotations.
+
+    Args:
+        image (bytes): _description_
+        orig_annots (list[AbsoluteBoundingBox]): _description_
+        threshold (int, optional): _description_. Defaults to 248.
+
+    Returns:
+        list[AbsoluteBoundingBox]: _description_
+    """
+    image_as_np = np.frombuffer(image, dtype=np.uint8)
+    img = cv.imdecode(image_as_np, cv.IMREAD_COLOR)
     result_dict = {}
     for annot in orig_annots:
         x, y, w, h = crop_to_content(img, annot, threshold)
