@@ -1,3 +1,4 @@
+import logging
 from typing import cast
 from . common.bounding_box import BoundingBox, TargetType, AbsoluteBoundingBox, RelativeBoundingBox
 from . helpers import helpers
@@ -5,7 +6,7 @@ import math
 import numpy as np
 import lapsolver
 
-SCALE_FACTOR = 1000
+SCALE_FACTOR = 100
 IOU_THRESHOLD = 0.8
 
 def calc_L2_matrix(predictions: list[RelativeBoundingBox], ground_truth: list[RelativeBoundingBox]) -> np.ndarray:
@@ -35,28 +36,29 @@ def calc_L2_matrix(predictions: list[RelativeBoundingBox], ground_truth: list[Re
         result.append(column)
     return np.array(result, np.float32)
 
-def calc_IOU(box1: BoundingBox, box2: BoundingBox) -> float:
+def calc_IOU(box1: RelativeBoundingBox, box2: RelativeBoundingBox) -> float:
     boxA = [box1.x, box1.y, box1.x + box1.width, box1.y + box1.height]
-    boxA = [entry * SCALE_FACTOR for entry in boxA]
+    boxA_scaled = [entry * SCALE_FACTOR for entry in boxA]
     boxB = [box2.x, box2.y, box2.x + box2.width, box2.y + box2.height]
-    boxB = [entry * SCALE_FACTOR for entry in boxB]
+    boxB_scaled = [entry * SCALE_FACTOR for entry in boxB]
     # Taken from https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
     # determine the (x, y)-coordinates of the intersection rectangle
-    xA = max(boxA[0], boxB[0])
-    yA = max(boxA[1], boxB[1])
-    xB = min(boxA[2], boxB[2])
-    yB = min(boxA[3], boxB[3])
+    xA = max(boxA_scaled[0], boxB_scaled[0])
+    yA = max(boxA_scaled[1], boxB_scaled[1])
+    xB = min(boxA_scaled[2], boxB_scaled[2])
+    yB = min(boxA_scaled[3], boxB_scaled[3])
     # compute the area of intersection rectangle
     interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
     # compute the area of both the prediction and ground-truth
     # rectangles
-    boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
-    boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+    boxAArea = (boxA_scaled[2] - boxA_scaled[0] + 1) * (boxA_scaled[3] - boxA_scaled[1] + 1)
+    boxBArea = (boxB_scaled[2] - boxB_scaled[0] + 1) * (boxB_scaled[3] - boxB_scaled[1] + 1)
     # compute the intersection over union by taking the intersection
     # area and dividing it by the sum of prediction + ground-truth
     # areas - the interesection area
     iou = interArea / float(boxAArea + boxBArea - interArea)
     # return the intersection over union value
+    logging.debug(f'{boxA_scaled=}, {boxB_scaled=}, {box1.type=}, {box2.type=}, {iou=}')
     return iou
 
 def calc_confusion_matrix_class(
@@ -165,6 +167,7 @@ def check_no_disagreements(
     IOU_threshold: float = IOU_THRESHOLD
 )-> bool:
     confusion_matrix = evaluate(predictions, ground_truth, IOU_threshold)
+    logging.debug(f'{confusion_matrix=}')
     for _, fp, fn in confusion_matrix.values():
         if fp or fn:
             return False
