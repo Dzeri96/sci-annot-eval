@@ -42,7 +42,7 @@ def run_deepfigures_prediction_for_folder(
             logging.error('Prediction unsuccessful!')
         else:
             # Delete rendered pages
-            result_folder = os.path.join(output_folder, id, os.listdir(os.path.join(output_folder, id))[0])
+            result_folder = os.path.join(output_folder, id, get_weird_output_folder(output_folder, id))
             rendered_folder = os.path.join(result_folder, id + '.pdf-images')
             shutil.rmtree(rendered_folder)
         id_status_dict[id] = successful
@@ -55,10 +55,16 @@ def run_deepfigures_prediction_for_folder(
     os.mkdir(os.path.join(output_folder, 'results'))
     for id, successful in id_status_dict.items():
         if successful:
-            result_folder = os.path.join(output_folder, id, os.listdir(os.path.join(output_folder, id))[0])
+            result_folder = os.path.join(output_folder, id, get_weird_output_folder(output_folder, id))
             shutil.copy(
                 os.path.join(result_folder, id + 'deepfigures-results.json'),
                 os.path.join(output_folder, 'results', id + '.json'),
             )
+
+def get_weird_output_folder(output_root: str, pdf_id: str)-> str:
+    all_entries = os.listdir(os.path.join(output_root, pdf_id))
+    log_txt_excluded_entries = [entry for entry in all_entries if entry != 'log.txt']
+    # Yeah I know it's ugly
+    return log_txt_excluded_entries[0]
     
 
