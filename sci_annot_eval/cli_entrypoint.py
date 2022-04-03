@@ -1,5 +1,5 @@
 import argparse
-from . helpers import rasterize_pdfs, pdffigures2_page_splitter
+from . helpers import rasterize_pdfs, pdffigures2_page_splitter, deepfigures_prediction
 import coloredlogs
 import logging
 from enum import Enum
@@ -32,6 +32,20 @@ def run_benchmark(
         pred_dir,
         output_parquet_path,
         IOU_threshold
+    )
+
+def run_deepfigures_prediction(
+    deepfigures_root: str,
+    input_folder: str,
+    output_folder: str,
+    run_summary_csv_path: str,
+    **kwargs
+):
+    deepfigures_prediction.run_deepfigures_prediction_for_folder(
+        deepfigures_root,
+        input_folder,
+        output_folder,
+        run_summary_csv_path
     )
 
 def main():
@@ -75,6 +89,17 @@ def main():
     parser_benchmark.add_argument('-o', '--output_path', dest='output_parquet_path', metavar='PATH', help='Tells the tool where to create a parquet file which contains the benchmark output', required=True)
     parser_benchmark.add_argument('-t', '--IOU_threshold', dest='IOU_threshold', metavar='THRESHOLD', help='Area under curve threshold over which annotations count as valid (default is 0.8)', type=float)
     parser_benchmark.set_defaults(func= run_benchmark)
+
+    parser_deepfigures_predict = subparsers.add_parser(
+        'deepfigures-predict',
+        description='Use deepfigures to detect elements from each pdf in the input folder',
+        argument_default=argparse.SUPPRESS
+    )
+    parser_deepfigures_predict.add_argument('deepfigures_root', metavar='DIR', help='Folder containing manage.py and all other requirements for deepfigures-open')
+    parser_deepfigures_predict.add_argument('input_folder', metavar='DIR', help='Folder containing input PDFs')
+    parser_deepfigures_predict.add_argument('output_folder', metavar='DIR', help='Folder in which predictions should be saved')
+    parser_deepfigures_predict.add_argument('run_summary_csv_path', metavar='FILE', help='Path to save run information')
+    parser_deepfigures_predict.set_defaults(func=run_deepfigures_prediction)
 
 
     args = parser.parse_args()
