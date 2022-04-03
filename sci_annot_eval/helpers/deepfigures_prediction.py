@@ -44,12 +44,12 @@ def run_deepfigures_prediction_for_folder(
             # Delete rendered pages
             result_folder = os.path.join(output_folder, id, os.listdir(os.path.join(output_folder, id))[0])
             rendered_folder = os.path.join(result_folder, id + '.pdf-images')
-            os.rmdir(rendered_folder)
+            shutil.rmtree(rendered_folder)
         id_status_dict[id] = successful
     
     logging.info(f'Successful counts: {Counter(id_status_dict.values())}')
-    summary_series = pd.Series(id_status_dict, name='prediction_successful', index='pdf_id')
-    summary_series.to_csv(run_summary_csv_path)
+    summary_series = pd.Series(id_status_dict, name='prediction_successful')
+    summary_series.to_csv(run_summary_csv_path, index_label='pdf_id')
 
     logging.debug('Extracting result JSONs')
     os.mkdir(os.path.join(output_folder, 'results'))
