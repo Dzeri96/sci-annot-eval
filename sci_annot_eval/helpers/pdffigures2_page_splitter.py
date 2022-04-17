@@ -1,13 +1,14 @@
 import json
 import os
+from typing import Any
 import pandas as pd
 import logging
 import numpy as np
 
-# Assumed by pdffigures2 and cannot be changed
-ASSUMED_DPI = 72
+# TODO: Assumed by pdffigures2 and cannot be changed, but should be changed for deepfigures to 100
+ASSUMED_DPI = 100
 
-def append_entry(result_dict: dict, page_nr: int, category: str, entry: dict):
+def append_entry(result_dict: dict[int, Any], page_nr: int, category: str, entry: dict):
     if page_nr not in result_dict.keys():
         result_dict[page_nr] = {'figures': [], 'regionless-captions': []}
     
@@ -15,7 +16,7 @@ def append_entry(result_dict: dict, page_nr: int, category: str, entry: dict):
 
 def split_pages(input_dir: str, output_dir: str, run_prefix: str, render_summary_path: str, **kwargs):
     """
-        Turn the normal pdffigures2 output into per-page output with width/height info.
+        Turn the normal pdffigures2/deepfigures output into per-page output with width/height info.
         IMPORTANT: run pdffigures2 with the -c flag!
 
         run_prefix: str - Pandatory prefix that each json file contains,
@@ -37,7 +38,7 @@ def split_pages(input_dir: str, output_dir: str, run_prefix: str, render_summary
     for file_nr, file in enumerate(input_files):
         full_input_file_path = os.path.join(input_dir, file)
         with open(full_input_file_path, 'r') as fp:
-            result = {}
+            result: dict[int, Any] = {}
             pdf_id = file[len(run_prefix):-5]
             parsed_json = json.load(fp)
 
@@ -45,9 +46,10 @@ def split_pages(input_dir: str, output_dir: str, run_prefix: str, render_summary
             # Pages are 0-indexed!
             append_entry(result, figure_entry['page']+1, 'figures', figure_entry)
         
-        for reg_cap_entry in parsed_json['regionless-captions']:
-            # Pages are 0-indexed!
-            append_entry(result, reg_cap_entry['page']+1, 'regionless-captions', reg_cap_entry)
+        if 'regionless-captions' in parsed_json:
+            for reg_cap_entry in parsed_json['regionless-captions']:
+                # Pages are 0-indexed!
+                append_entry(result, reg_cap_entry['page']+1, 'regionless-captions', reg_cap_entry)
 
         if result:
             rel_summs = render_summ[render_summ['file'] == pdf_id]
@@ -58,7 +60,7 @@ def split_pages(input_dir: str, output_dir: str, run_prefix: str, render_summary
                 scaled_height = scale_factor * summary_row['height']
 
                 extended_entry = {'width': scaled_width, 'height': scaled_height, **entry_dict}
-                with open(os.path.join(output_dir, summary_row.name+'.json'), 'w+') as of:
+                with open(os.path.join(output_dir, str(summary_row.name)+'.json'), 'w+') as of:
                     json.dump(extended_entry, of, indent=4)
                     
         if file_nr+1 == logging_points[-1]:

@@ -14,6 +14,7 @@ coloredlogs = "*"
 
 [dev-packages]
 debugpy = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.9"

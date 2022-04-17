@@ -5,11 +5,13 @@ import logging
 from enum import Enum
 from . benchmarking import benchmark
 from . parsers import sci_annot_parser, pdffigures2_parser, parserInterface
+from sci_annot_eval.common.prediction_field_mapper import Pdffigures2FieldMapper, DeepfiguresFieldMapper
 
 # TODO: Type hint values
 class RegisteredParsers(Enum):
     SCI_ANNOT = sci_annot_parser.SciAnnotParser()
-    PDF_FIGURES_2 = pdffigures2_parser.PdfFigures2Parser()
+    PDF_FIGURES_2 = pdffigures2_parser.PdfFigures2Parser(Pdffigures2FieldMapper)
+    DEEPFIGURES = pdffigures2_parser.PdfFigures2Parser(DeepfiguresFieldMapper)
 
 def run_benchmark(
     render_summary_parquet_path: str,
