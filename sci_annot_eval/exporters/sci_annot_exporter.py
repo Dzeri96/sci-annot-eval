@@ -1,11 +1,12 @@
+from numpy import absolute
 from sci_annot_eval.common.sci_annot_annotation import Annotation
-from ..common.bounding_box import AbsoluteBoundingBox
+from ..common.bounding_box import AbsoluteBoundingBox, RelativeBoundingBox
 from . exporterInterface import Exporter
 import json
 
 class SciAnnotExporter(Exporter):
     # TODO: Stop breaking the rules of OOP!
-    def export_to_dict(self, input: list[AbsoluteBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> dict:
+    def export_to_dict(self, input: list[RelativeBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> dict:
         result = {
             'canvasHeight': canvas_height,
             'canvasWidth': canvas_width,
@@ -15,8 +16,12 @@ class SciAnnotExporter(Exporter):
         source = kwargs['source'] if 'source' in kwargs.keys() else 'Unknown'
 
         for annotation in input:
-            if type(annotation) is not AbsoluteBoundingBox:
-                raise TypeError(f'Annotation {annotation} is not of type AbsoluteBoundingBox!')
+            if type(annotation) is not RelativeBoundingBox:
+                raise TypeError(f'Annotation {annotation} is not of type RelativeBoundingBox!')
+            absolute_x = annotation.x * canvas_width
+            absolute_y = annotation.y * canvas_height
+            absolute_height = annotation.height * canvas_height
+            absolute_width = annotation.width * canvas_width
             generated_anno = {
                 "type": "Annotation",
                 "body": [
@@ -31,7 +36,7 @@ class SciAnnotExporter(Exporter):
                     "selector": {
                         "type": "FragmentSelector",
                         "conformsTo": "http://www.w3.org/TR/media-frags/",
-                        "value": f"xywh=pixel:{annotation.x},{annotation.y},{annotation.width},{annotation.height}"
+                        "value": f"xywh=pixel:{absolute_x},{absolute_y},{absolute_width},{absolute_height}"
                     }
                 },
                 "@context": "http://www.w3.org/ns/anno.jsonld",
@@ -49,6 +54,18 @@ class SciAnnotExporter(Exporter):
 
         return result
 
-    def export_to_str(self, input: list[AbsoluteBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> str:
-        res = self.export_to_dict(input, canvas_width, canvas_height, kwargs)
-        return json.dumps(res)
+    def export_to_str(self, input: list[RelativeBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> str:
+        res = self.export_to_dict(input, canvas_width, canvas_height, **kwargs)
+        return json.dumps(res, indent=4)
+
+    def export_to_file(
+        self,
+        input: list[RelativeBoundingBox],
+        canvas_width: int,
+        canvas_height: int,
+        file_location: str,
+        **kwargs
+    ):
+        res = self.export_to_str(input, canvas_width, canvas_height, **kwargs)
+        with open(file_location, 'w') as f:
+            f.write(res)

@@ -11,3 +11,7 @@ class Exporter(ABC):
     @abstractmethod
     def export_to_str(self, input: list[BoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> str:
         pass
+    
+    @abstractmethod
+    def export_to_file(self, input: list[BoundingBox], canvas_width: int, canvas_height: int, file_location: str, **kwargs):
+        pass
