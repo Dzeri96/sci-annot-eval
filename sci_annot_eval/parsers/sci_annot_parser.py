@@ -1,10 +1,11 @@
+from sci_annot_eval.common.bounding_box import RelativeBoundingBox
 from . parserInterface import Parser
 from .. common.bounding_box import AbsoluteBoundingBox, BoundingBox, RelativeBoundingBox
 from ..common.sci_annot_annotation import Annotation
 from .. helpers import helpers
 import re
 import json
-from typing import cast
+from typing import Any, Optional
 
 class SciAnnotParser(Parser):
     location_regex= re.compile(r'\d+(?:\.\d+)?')
@@ -16,7 +17,7 @@ class SciAnnotParser(Parser):
                 return block['value']
         raise Exception(f'Annotation has no type: {annot}')
 
-    def get_annotation_parent_id(self, annot: Annotation) :
+    def get_annotation_parent_id(self, annot: Annotation)-> Optional[str] :
         for block in annot['body']:
             if block['purpose'] == 'parent':
                 return block['value']
@@ -30,10 +31,8 @@ class SciAnnotParser(Parser):
         # Python's typing is not so clever yet...
         return (float(parsed_loc[0]), float(parsed_loc[1]), float(parsed_loc[2]), float(parsed_loc[3]))
         
-    def parse_dict(self, input: dict, make_relative: bool) -> list[BoundingBox]:
-        canvas_height = int(input['canvasHeight'])
-        canvas_width = int(input['canvasWidth'])
-
+    def parse_dict_absolute(self, input: dict) -> list[AbsoluteBoundingBox]:
+    
         result: dict[AbsoluteBoundingBox, AbsoluteBoundingBox] = {}
         for annotation in input['annotations']:
             id = annotation['id']
@@ -58,14 +57,24 @@ class SciAnnotParser(Parser):
 
         res_list = list(result.values())
 
-        if make_relative:
-            res_list = helpers.make_relative(res_list, canvas_width, canvas_height)
+        return res_list
 
-        return cast(list[BoundingBox], res_list)
+    def parse_dict_relative(self, input: dict[str, Any]) -> list[RelativeBoundingBox]:
+        canvas_height = int(input['canvasHeight'])
+        canvas_width = int(input['canvasWidth'])
 
-    def parse_text(self, input: str, make_relative: bool) -> list[BoundingBox]:
-        return self.parse_dict(json.loads(input), make_relative)
+        return helpers.make_relative(self.parse_dict_absolute(input), canvas_width, canvas_height)
 
-    def parse_file(self, path: str, make_relative: bool) -> list[BoundingBox]:
+    def parse_text_absolute(self, input: str) -> list[AbsoluteBoundingBox]:
+        return self.parse_dict_absolute(json.loads(input))
+    
+    def parse_text_relative(self, input: str) -> list[RelativeBoundingBox]:
+        return self.parse_dict_relative(json.loads(input))
+
+    def parse_file_absolute(self, path: str) -> list[AbsoluteBoundingBox]:
         with open(path, 'r') as fd:
-            return self.parse_dict(json.load(fd), make_relative)
+            return self.parse_dict_absolute(json.load(fd))
+        
+    def parse_file_relative(self, path: str) -> list[RelativeBoundingBox]:
+        with open(path, 'r') as fd:
+            return self.parse_dict_relative(json.load(fd))

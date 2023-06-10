@@ -1,10 +1,10 @@
 import logging
-from typing import cast
 from . common.bounding_box import BoundingBox, TargetType, AbsoluteBoundingBox, RelativeBoundingBox
 from . helpers import helpers
 import math
 import numpy as np
 import lapsolver
+from typing import Sequence
 
 SCALE_FACTOR = 100
 IOU_THRESHOLD = 0.8
@@ -95,7 +95,7 @@ def calc_confusion_matrix_class(
 
     return true_positive, false_positive, false_negative
 
-def build_index_refs(input: list[BoundingBox]) -> dict[int, int]:
+def build_index_refs(input: Sequence[BoundingBox]) -> dict[int, int]:
     """
     Builds a dictionary where the keys correspond to the indexes of the input array (representing children), and the values refer to the indexes of the input array referring to their parents.
     Simply put: {idx_child -> idx_parent}.
@@ -113,8 +113,8 @@ def calc_confusion_matrix_references(
     true_positive = 0
     false_positive = 0
     false_negative = 0
-    prediction_deps = build_index_refs(cast(list[BoundingBox], predictions))
-    truth_deps = build_index_refs(cast(list[BoundingBox], ground_truth))
+    prediction_deps = build_index_refs(predictions)
+    truth_deps = build_index_refs(ground_truth)
     costs = calc_L2_matrix(predictions, ground_truth)
     if (predictions and ground_truth):
         row_ids, col_ids = lapsolver.solve_dense(costs)
@@ -143,7 +143,7 @@ def evaluate(
     ground_truth: list[RelativeBoundingBox],
     IOU_threshold: float = IOU_THRESHOLD,
     eval_dependencies: bool = True,
-    classes=[t.value for t in TargetType]
+    classes=[t.value for t in TargetType] #type: ignore
 ) -> dict[str, tuple[int, int, int]]:
     """
         Returns dictionary with keys corresponding to classes (Figure, Table, etc., and possibly _references),

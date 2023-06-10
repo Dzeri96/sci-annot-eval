@@ -1,5 +1,4 @@
 import argparse
-from typing import cast
 from sci_annot_eval.common.bounding_box import AbsoluteBoundingBox, RelativeBoundingBox
 
 from sci_annot_eval.exporters.sci_annot_exporter import SciAnnotExporter
@@ -76,9 +75,9 @@ def run_transpile(
         id = file[:-5]
         logging.debug(f'Transpiling file {i+1}/{len(files)} with id {id}')
         summary_row = render_summ[render_summ.index == id]
-        relative_input = input_parser.parse_file(os.path.join(input_dir, file), True) 
+        relative_input = input_parser.parse_file_relative(os.path.join(input_dir, file)) 
         exporter.export_to_file(
-            cast(list[RelativeBoundingBox], relative_input), 
+            relative_input, 
             int(summary_row.width.values[0]),
             int(summary_row.height.values[0]),
             os.path.join(output_dir, file)

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sci_annot_eval',
-    version='0.0.6',
+    version='0.0.7',
     description='The evaluation component of the sci-annot framework',
     author='Dzeri96',
     classifiers=[

@@ -3,7 +3,7 @@ from sci_annot_eval.common.bounding_box import AbsoluteBoundingBox, BoundingBox,
 from sci_annot_eval.common.prediction_field_mapper import PredictionFieldMapper
 from .. helpers import helpers
 import json
-from typing import Any, Type, cast
+from typing import Any, Type
 
 class PdfFigures2Parser(Parser):
     """This parser works for both Pdffigures2 and Deepfigures
@@ -22,7 +22,7 @@ class PdfFigures2Parser(Parser):
         return x, y, w, h
 
 
-    def parse_dict(self, input: dict[str, Any], make_relative: bool) -> list[BoundingBox]:
+    def parse_dict_absolute(self, input: dict[str, Any]) -> list[AbsoluteBoundingBox]:
         result: list[AbsoluteBoundingBox] = []
 
         figures = input['figures']
@@ -47,15 +47,22 @@ class PdfFigures2Parser(Parser):
             result.append(AbsoluteBoundingBox(
                 TargetType.CAPTION.value, r_cap_x, r_cap_y, r_cap_h, r_cap_w, None
             ))
+                    
+        return result
+    
+    def parse_dict_relative(self, input: dict[str, Any]) -> list[RelativeBoundingBox]:
+        return helpers.make_relative(self.parse_dict_absolute(input), int(input['width']), int(input['height']))
 
-        if make_relative:
-            return cast(list[BoundingBox], helpers.make_relative(result, int(input['width']), int(input['height'])))
-        
-        return cast(list[BoundingBox], result)
+    def parse_text_absolute(self, input: str) -> list[AbsoluteBoundingBox]:
+        return self.parse_dict_absolute(json.loads(input))
+    
+    def parse_text_relative(self, input: str) -> list[RelativeBoundingBox]:
+        return self.parse_dict_relative(json.loads(input))
 
-    def parse_text(self, input: str, make_relative: bool) -> list[BoundingBox]:
-        return self.parse_dict(json.loads(input), make_relative)
-
-    def parse_file(self, path: str, make_relative: bool) -> list[BoundingBox]:
+    def parse_file_absolute(self, path: str) -> list[AbsoluteBoundingBox]:
         with open(path, 'r') as fd:
-            return self.parse_dict(json.load(fd), make_relative)
+            return self.parse_dict_absolute(json.load(fd))
+        
+    def parse_file_relative(self, path: str) -> list[RelativeBoundingBox]:
+        with open(path, 'r') as fd:
+            return self.parse_dict_relative(json.load(fd))

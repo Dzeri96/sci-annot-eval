@@ -4,7 +4,6 @@ import os
 from sci_annot_eval.common.bounding_box import AbsoluteBoundingBox, RelativeBoundingBox
 from . parsers.parserInterface import Parser
 from sci_annot_eval import evaluation
-from typing import cast
 
 def build_id_file_dict(path: str):
     result = {}
@@ -43,10 +42,10 @@ def benchmark(
         id = row.Index
         ground_truth = []
         if id in gtruth_file_dict.keys():
-            ground_truth = cast(list[RelativeBoundingBox], gtruth_parser.parse_file(gtruth_file_dict[id], True))
+            ground_truth = gtruth_parser.parse_file_relative(gtruth_file_dict[id])
         predictions = []
         if id in pred_file_dict.keys():
-            predictions = cast(list[RelativeBoundingBox], pred_parser.parse_file(pred_file_dict[id], True))
+            predictions = pred_parser.parse_file_relative(pred_file_dict[id])
 
         result_dict[id] = evaluation.evaluate(predictions, ground_truth, IOU_threshold)
 

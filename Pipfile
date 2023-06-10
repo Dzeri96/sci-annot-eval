@@ -11,6 +11,7 @@ pdf2image = "*"
 pandas = "*"
 pyarrow = "*"
 coloredlogs = "*"
+mypy = "*"
 
 [dev-packages]
 debugpy = "*"
