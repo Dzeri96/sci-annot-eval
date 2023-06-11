@@ -16,6 +16,7 @@ mypy = "*"
 [dev-packages]
 debugpy = "*"
 mypy = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.9"

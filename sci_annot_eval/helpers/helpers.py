@@ -51,7 +51,8 @@ def make_relative(bbox_list: list[AbsoluteBoundingBox], canvas_width: int, canva
 
     return list(result_dict.values())
 
-        
+
+# TODO: Add float32 support!
 def crop_to_content(
     img: np.ndarray,
     orig_coords: AbsoluteBoundingBox,
