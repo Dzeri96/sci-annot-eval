@@ -1,4 +1,4 @@
-name: Python package
+name: Build - Test - Publish
 
 on: [push]
 
@@ -26,4 +26,4 @@ jobs:
         run: pipenv install --deploy --dev
 
       - name: Test with pytest
-        run: pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+        run: pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
