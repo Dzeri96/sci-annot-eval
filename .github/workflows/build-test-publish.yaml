@@ -35,3 +35,35 @@ jobs:
           name: junit-test-results
           path: '/home/runner/work/sci-annot-eval/sci-annot-eval/junit/test-results.xml'
           retention-days: 1
+
+      - name: Build dist
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        run: pipenv run python setup.py bdist && pipenv run python setup.py bdist_wheel
+
+      - name: Cache dist files
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        uses: actions/cache/save@v3
+        with:
+          path: ./dist
+          key: dist-cache-${{github.sha}}
+
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sci-annot-eval
+    permissions:
+      id-token: write 
+    needs: build
+    steps:
+      - name: Fetch dist files
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        uses: actions/cache/restore@v3
+        with:
+          path: ./dist
+          key: dist-cache-${{github.sha}}
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
