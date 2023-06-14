@@ -28,13 +28,12 @@ jobs:
       - name: Test with pytest
         run: pipenv run pytest --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
       
-      - name: Upload Test Report
-        uses: actions/upload-artifact@v3
+      - name: Cache Test Report
+        uses: actions/cache/save@v3
         if: always() # always run even if the previous step fails
         with:
-          name: junit-test-results
           path: '/home/runner/work/sci-annot-eval/sci-annot-eval/junit/test-results.xml'
-          retention-days: 1
+          key: junit-results-cache.${{github.sha}}
 
       - name: Build dist
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
@@ -46,6 +45,24 @@ jobs:
         with:
           path: ./dist
           key: dist-cache-${{github.sha}}
+  
+  test_report:
+    permissions:
+      checks: write
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Fetch Test Report
+        uses: actions/cache/restore@v3
+        if: always() # always run even if the previous step fails
+        with:
+          path: '/home/runner/work/sci-annot-eval/sci-annot-eval/junit/test-results.xml'
+          key: junit-results-cache.${{github.sha}}
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        with:
+          commit: ${{github.event.workflow_run.head_sha}}
+          report_paths: '/home/runner/work/sci-annot-eval/sci-annot-eval/junit/test-results.xml'
 
   pypi-publish:
     name: Upload release to PyPI
