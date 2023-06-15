@@ -1,6 +1,7 @@
 from enum import Enum
 from abc import ABC, abstractmethod
 
+# TODO: Change type in BoundingBox constructor to this enum
 class TargetType(Enum):
     FIGURE = 'Figure'
     TABLE = 'Table'
