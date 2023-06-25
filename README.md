@@ -1,5 +1,6 @@
 # Sci-Annot Evaluation Component
 [![PyPI version](https://badge.fury.io/py/sci-annot-eval.svg)](https://badge.fury.io/py/sci-annot-eval)
+![Build & Test Pipeline](https://github.com/dzeri96/sci-annot-eval/actions/workflows/build-test-publish.yaml/badge.svg)
 
 This package was developed as part of my master's thesis and used in the evaluation stage.
 
