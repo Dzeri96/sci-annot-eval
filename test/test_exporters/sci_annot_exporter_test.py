@@ -1,7 +1,8 @@
 from test.test_exporters.test_exporterInterface import TstExporterInterface, reference_relative_bb_list
 from sci_annot_eval.common.bounding_box import RelativeBoundingBox
-from sci_annot_eval.exporters.sci_annot_exporter import SciAnnotOutput, SciAnnotExporter
-from sci_annot_eval.parsers.sci_annot_parser import SciAnnotParser
+from sci_annot_eval.exporters.sci_annot_exporter import SciAnnotExporter
+from sci_annot_eval.parsers.sci_annot_parser import SciAnnotParser, Annotation
+from sci_annot_eval.common.sci_annot_annotation import SciAnnotOutput
 import pytest
 
 @pytest.fixture
@@ -11,7 +12,7 @@ def sci_annot_exporter_result(reference_relative_bb_list: list[RelativeBoundingB
 
 class TestSciAnnotExporter(TstExporterInterface):
 
-    def find_annotation_by_hash(self, sci_annot_output: SciAnnotOutput, hash: int) -> dict:
+    def find_annotation_by_hash(self, sci_annot_output: SciAnnotOutput, hash: int) -> Annotation:
         for annotation in sci_annot_output['annotations']:
             if annotation['id'] == f'#{hash}':
                 return annotation #type: ignore
@@ -42,7 +43,7 @@ class TestSciAnnotExporter(TstExporterInterface):
         for bounding_box in reference_relative_bb_list:
             scaled_annotation = self.find_annotation_by_hash(sci_annot_exporter_result, hash(bounding_box))
             # TODO: Make parsing independent
-            x, y, w, h = SciAnnotParser().parse_location_string(scaled_annotation["target"]["selector"]["value"])
+            x, y, w, h = SciAnnotParser().parse_location_string(scaled_annotation)
             assert x == bounding_box.x * 500
             assert y == bounding_box.y * 1000
             assert w == bounding_box.width * 500

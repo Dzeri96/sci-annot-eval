@@ -1,21 +1,22 @@
 from sci_annot_eval.common.bounding_box import RelativeBoundingBox
 from . parserInterface import Parser
-from .. common.bounding_box import AbsoluteBoundingBox, BoundingBox, RelativeBoundingBox
-from ..common.sci_annot_annotation import Annotation
+from .. common.bounding_box import AbsoluteBoundingBox, BoundingBox, RelativeBoundingBox, TargetType
+from ..common.sci_annot_annotation import Annotation, SciAnnotOutput
 from .. helpers import helpers
 import re
 import json
 from typing import Any, Optional
+from typing import Mapping
 
 class SciAnnotParser(Parser):
     location_regex= re.compile(r'\d+(?:\.\d+)?')
-    child_types = ['Caption']
+    child_types = [TargetType.CAPTION]
 
-    def get_annotation_type(self, annot: Annotation)-> str:
+    def get_annotation_type(self, annot: Annotation)-> TargetType:
         for block in annot['body']:
             if block['purpose'] == 'img-cap-enum':
-                return block['value']
-        raise Exception(f'Annotation has no type: {annot}')
+                return TargetType(block['value'])
+        raise ValueError(f'Annotation has no type: {annot}')
 
     def get_annotation_parent_id(self, annot: Annotation)-> Optional[str] :
         for block in annot['body']:
@@ -23,27 +24,28 @@ class SciAnnotParser(Parser):
                 return block['value']
         return None
 
-    def parse_location_string(self, loc: str)-> tuple[float, float, float, float]:
+    def parse_location_string(self, annot: Annotation)-> tuple[float, float, float, float]:
+        loc = annot['target']['selector']['value']
         parsed_loc = self.location_regex.findall(loc)
         if (len(parsed_loc) != 4):
-            raise Exception(f'Location string couldn\'t be parsed: {loc}')
+            raise ValueError(f'Location string couldn\'t be parsed: {loc}')
 
         # Python's typing is not so clever yet...
         return (float(parsed_loc[0]), float(parsed_loc[1]), float(parsed_loc[2]), float(parsed_loc[3]))
         
-    def parse_dict_absolute(self, input: dict) -> list[AbsoluteBoundingBox]:
+    def parse_dict_absolute(self, input: Mapping) -> list[AbsoluteBoundingBox]:
     
-        result: dict[AbsoluteBoundingBox, AbsoluteBoundingBox] = {}
+        result: dict[str, AbsoluteBoundingBox] = {}
         for annotation in input['annotations']:
             id = annotation['id']
             ann_type = self.get_annotation_type(annotation)
-            x, y, width, height = self.parse_location_string(annotation['target']['selector']['value'])
+            x, y, width, height = self.parse_location_string(annotation)
             parent_id = None
             if ann_type in self.child_types:
                 parent_id = self.get_annotation_parent_id(annotation)
 
             result[id] = AbsoluteBoundingBox(
-                ann_type,
+                ann_type.value,
                 x,
                 y,
                 height,
@@ -59,7 +61,7 @@ class SciAnnotParser(Parser):
 
         return res_list
 
-    def parse_dict_relative(self, input: dict[str, Any]) -> list[RelativeBoundingBox]:
+    def parse_dict_relative(self, input: Mapping[str, Any]) -> list[RelativeBoundingBox]:
         canvas_height = int(input['canvasHeight'])
         canvas_width = int(input['canvasWidth'])
 

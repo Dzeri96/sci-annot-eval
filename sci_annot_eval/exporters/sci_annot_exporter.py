@@ -1,13 +1,9 @@
-from sci_annot_eval.common.sci_annot_annotation import Annotation
+from sci_annot_eval.common.sci_annot_annotation import Annotation, SciAnnotOutput
 from ..common.bounding_box import AbsoluteBoundingBox, RelativeBoundingBox
 from . exporterInterface import Exporter
 import json
 from typing import TypedDict, Any
 
-class SciAnnotOutput(TypedDict):
-    canvasHeight: int
-    canvasWidth: int
-    annotations: list[dict]
 
 class SciAnnotExporter(Exporter):
     def export_to_dict(self, input: list[RelativeBoundingBox], canvas_width: int, canvas_height: int, **kwargs) -> SciAnnotOutput:
@@ -26,7 +22,7 @@ class SciAnnotExporter(Exporter):
             absolute_y = annotation.y * canvas_height
             absolute_height = annotation.height * canvas_height
             absolute_width = annotation.width * canvas_width
-            generated_anno: dict[str, Any] = {
+            generated_anno: Annotation = {
                 "type": "Annotation",
                 "body": [
                     {

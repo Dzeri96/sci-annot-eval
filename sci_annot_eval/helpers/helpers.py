@@ -7,8 +7,12 @@ def delete_multiple_elements(list_object, indices):
     for idx in indices:
         list_object.pop(idx)
 
-def make_absolute(bbox_list: list[RelativeBoundingBox], canvas_width: int, canvas_height: int) -> list[AbsoluteBoundingBox]:
-    result_dict = {}
+def make_absolute(
+        bbox_list: list[RelativeBoundingBox],
+        canvas_width: int,
+        canvas_height: int
+) -> list[AbsoluteBoundingBox]:
+    result_dict: dict[RelativeBoundingBox, AbsoluteBoundingBox] = {}
     for box in bbox_list:
         if type(box) is not RelativeBoundingBox:
             raise TypeError(f'Annotation {box} is not of type RelativeBoundingBox!')
@@ -29,8 +33,12 @@ def make_absolute(bbox_list: list[RelativeBoundingBox], canvas_width: int, canva
 
     return list(result_dict.values())
 
-def make_relative(bbox_list: list[AbsoluteBoundingBox], canvas_width: int, canvas_height: int) -> list[RelativeBoundingBox]:
-    result_dict = {}
+def make_relative(
+        bbox_list: list[AbsoluteBoundingBox],
+        canvas_width: int,
+        canvas_height: int
+) -> list[RelativeBoundingBox]:
+    result_dict: dict[AbsoluteBoundingBox, RelativeBoundingBox] = {}
     for box in bbox_list:
         if type(box) is not AbsoluteBoundingBox:
             raise TypeError(f'Annotation {box} is not of type AbsoluteBoundingBox!')
