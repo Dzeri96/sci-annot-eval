@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='sci_annot_eval',
-    version='0.0.7',
+    version='0.0.8',
     description='The evaluation component of the sci-annot framework',
     author='Dzeri96',
     classifiers=[
